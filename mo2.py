@@ -152,7 +152,7 @@ class Poller:
                 self.failcounter=4
                 self.connected = False
                 mqc.publish(globaltopic + self.topic +"/connected", "False", qos=1, retain=True)
-                
+
             else:
                 if self.failcounter<3:
                     self.failcounter+=1
@@ -198,9 +198,10 @@ class Poller:
                     else:
                         if verbosity>=1:
                             print("Slave device "+str(self.slaveid)+" responded with error code: "+str(result.function_code))
-                except:
+                except Exception as err:
                     failed = True
                     if verbosity>=1:
+                        print("Error: " + str(err))
                         print("Error talking to slave device:"+str(self.slaveid)+", trying again...")
                 self.failCount(failed)
             else:
@@ -226,7 +227,7 @@ class Poller:
         #check reference configuration and maybe add to this poller or to the list of writable things
         if myRef.topic not in self.device.occupiedTopics:
             self.device.occupiedTopics.append(myRef.topic)
-            
+
             if "r" in myRef.rw or "w" in myRef.rw:
                 myRef.device=self.device
                 if verbosity >= 2:
@@ -259,7 +260,7 @@ class Poller:
 class dataTypes:
     def __init__(self,conf):
         if conf is None or conf == "uint16" or conf == "":
-            self.regAmount=1          
+            self.regAmount=1
             self.parse=self.parseuint16
             self.combine=self.combineuint16
         elif conf.startswith("string"):
@@ -280,33 +281,33 @@ class dataTypes:
         #elif conf == "int32LE":
            # self.parse=self.parseint32LE
            # self.combine=self.combineint32LE
-           # self.regAmount=2          
+           # self.regAmount=2
         #elif conf == "int32BE":
          #   self.regAmount=2
           #  self.parse=self.parseint32BE
            # self.combine=self.combineint32BE
         elif conf == "int16":
-            self.regAmount=1         
+            self.regAmount=1
             self.parse=self.parseint16
             self.combine=self.combineint16
         elif conf == "uint32LE":
-            self.regAmount=2          
+            self.regAmount=2
             self.parse=self.parseuint32LE
             self.combine=self.combineuint32LE
         elif conf == "uint32BE":
-            self.regAmount=2          
+            self.regAmount=2
             self.parse=self.parseuint32BE
             self.combine=self.combineuint32BE
         elif conf == "bool":
-            self.regAmount=1         
+            self.regAmount=1
             self.parse=self.parsebool
             self.combine=self.combinebool
         elif conf == "float32LE":
-            self.regAmount=2          
+            self.regAmount=2
             self.parse=self.parsefloat32LE
             self.combine=self.combinefloat32LE
         elif conf == "float32BE":
-           self.regAmount=2          
+           self.regAmount=2
            self.parse=self.parsefloat32BE
            self.combine=self.combinefloat32BE
         elif conf == "hex20":
@@ -373,7 +374,7 @@ class dataTypes:
         pass
     def combineint32LE(self,val):
         pass
-    
+
     def parseint32BE(self,msg):
         pass
     def combineint32BE(self,val):
@@ -426,7 +427,7 @@ class dataTypes:
     def combineuint32BE(self,val):
         out = val[0] + val[1]*65536
         return out
-    
+
     def parseuint16(self,msg):
         try:
             value=int(msg)
@@ -436,7 +437,7 @@ class dataTypes:
             value=None
         return value
     def combineuint16(self,val):
-        return val[0]
+        return val
 
     def parsefloat32LE(self,msg):
         try:
@@ -482,7 +483,7 @@ class Reference:
         self.dtype=None
         if self.poller.functioncode == 1:
             self.dtype=dataTypes("bool")
-            
+
         elif self.poller.functioncode == 2:
             self.dtype=dataTypes("bool")
         else:
@@ -508,7 +509,7 @@ class Reference:
                 except:
                     if verbosity>=1:
                         print("Error publishing MQTT topic: " + str(self.device.name+"/state/"+self.topic)+"value: " + str(self.lastval))
-        
+
 pollers=[]
 
 # type, topic, slaveid,  ref,           size, functioncode, rate
@@ -525,7 +526,7 @@ with open(args.config,"r") as csvfile:
             slaveid = int(row["col2"])
             reference = int(row["col3"])
             size = int(row["col4"])
-            
+
             if row["col5"] == "holding_register":
                 functioncode = 3
                 dataType="int16"
@@ -587,7 +588,7 @@ def messagehandler(mqc,userdata,msg):
         if iterRef.topic == reference:
             myRef=iterRef
     if myRef == None: # no such reference
-        return    
+        return
     payload = str(msg.payload.decode("utf-8"))
     if myRef.writefunctioncode == 5:
         value = myRef.dtype.parse(str(payload))
@@ -601,7 +602,7 @@ def messagehandler(mqc,userdata,msg):
                     else:
                         if verbosity>=1:
                             print("Writing to device "+str(myDevice.name)+", Slave-ID="+str(myDevice.slaveid)+" at Reference="+str(myRef.reference)+" using function code "+str(myRef.writefunctioncode)+" FAILED! (Devices responded with errorcode. Maybe bad configuration?)")
-            
+
                 except NameError:
                     if verbosity>=1:
                         print("Error writing to slave device "+str(myDevice.slaveid)+" (maybe CRC error or timeout)")
@@ -628,7 +629,7 @@ def messagehandler(mqc,userdata,msg):
         else:
             if verbosity >= 1:
                 print("Writing to device "+str(myDevice.name)+", Slave-ID="+str(myDevice.slaveid)+" at Reference="+str(myRef.reference)+" using function code "+str(myRef.writefunctioncode)+" not possible. Value does not fulfill criteria.")
-        
+
 def connecthandler(mqc,userdata,flags,rc):
     if rc == 0:
         mqc.initial_connection_made = True

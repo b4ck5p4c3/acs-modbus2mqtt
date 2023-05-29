@@ -38,6 +38,7 @@ import random
 import ssl
 import math
 import struct
+import collections.abc
 
 
 from pymodbus.pdu import ModbusRequest
@@ -437,7 +438,9 @@ class dataTypes:
             value=None
         return value
     def combineuint16(self,val):
-        return val[0]
+        if isinstance(val, collections.abc.Sequence):
+            return val[0]
+        return val
 
     def parsefloat32LE(self,msg):
         try:

@@ -437,7 +437,7 @@ class dataTypes:
             value=None
         return value
     def combineuint16(self,val):
-        return val
+        return val[0]
 
     def parsefloat32LE(self,msg):
         try:
